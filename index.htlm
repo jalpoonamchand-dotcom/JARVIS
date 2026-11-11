@@ -4,65 +4,113 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JARVIS AI Assistant</title>
+<title>JARVIS AI - Version 2.0</title>
 
 <style>
+* { box-sizing: border-box; }
+
 body {
   margin: 0;
+  min-height: 100vh;
   padding: 25px 15px;
-  background: #050b18;
-  color: #00d9ff;
+  background: radial-gradient(circle, #102b45, #030914 75%);
+  color: #e5faff;
   font-family: Arial, sans-serif;
   text-align: center;
 }
 
 h1 {
+  color: #00d9ff;
   font-size: 38px;
-  letter-spacing: 5px;
-  margin-top: 35px;
+  letter-spacing: 6px;
   text-shadow: 0 0 20px #00d9ff;
+  margin-bottom: 5px;
 }
 
-.circle {
-  width: 160px;
-  height: 160px;
+.version {
+  color: #8aaebe;
+  font-size: 12px;
+  letter-spacing: 3px;
+}
+
+.reactor {
+  width: 175px;
+  height: 175px;
   border: 3px solid #00d9ff;
   border-radius: 50%;
   margin: 35px auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 60px;
-  box-shadow: 0 0 30px #008cff;
+  font-size: 65px;
+  color: #00d9ff;
+  box-shadow: 0 0 25px #008cff,
+              inset 0 0 25px #008cff;
+  animation: glow 2s infinite alternate;
 }
 
-button {
-  background: #00bde9;
-  border: none;
-  padding: 14px 22px;
-  margin: 8px;
-  border-radius: 25px;
-  font-size: 15px;
+@keyframes glow {
+  from { box-shadow: 0 0 15px #008cff; }
+  to { box-shadow: 0 0 40px #00d9ff; }
+}
+
+.panel {
+  max-width: 480px;
+  margin: auto;
+  padding: 22px;
+  border: 1px solid #087fa5;
+  border-radius: 18px;
+  background: rgba(7, 25, 43, .9);
+}
+
+#status {
+  color: #00e6ff;
   font-weight: bold;
-  color: #00121b;
+  min-height: 24px;
 }
 
-#status, #result {
-  margin: 20px auto;
-  max-width: 450px;
-  padding: 12px;
-  color: white;
+#result {
+  background: #071321;
+  border: 1px solid #17445d;
+  border-radius: 12px;
+  min-height: 90px;
+  padding: 18px;
+  margin: 18px 0;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 
+button {
+  width: 100%;
+  padding: 14px;
+  margin: 7px 0;
+  border: none;
+  border-radius: 10px;
+  background: #00c9ef;
+  color: #00131d;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+button:active {
+  transform: scale(.98);
+}
+
 input {
-  padding: 13px;
-  width: 70%;
-  border-radius: 20px;
+  width: 100%;
+  padding: 14px;
+  margin: 12px 0;
+  border-radius: 10px;
   border: 1px solid #00d9ff;
-  background: #101c30;
+  background: #071321;
   color: white;
+  font-size: 16px;
+}
+
+.small {
+  color: #7896a8;
+  font-size: 12px;
+  margin-top: 20px;
 }
 </style>
 </head>
@@ -70,70 +118,109 @@ input {
 <body>
 
 <h1>J.A.R.V.I.S</h1>
-<p>PERSONAL AI ASSISTANT</p>
+<p class="version">PERSONAL AI ASSISTANT • VERSION 2.0</p>
 
-<div class="circle">◉</div>
+<div class="reactor">◉</div>
 
-<h3 id="status">System Ready</h3>
+<div class="panel">
 
+<h3 id="status">SYSTEM READY</h3>
+
+<div id="result">
+Hello Sir! I am JARVIS. How can I help you?
+</div>
+
+<button onclick="testVoice()">TEST SPEAKER</button>
 <button onclick="testMic()">TEST MICROPHONE</button>
-<button onclick="startListening()">START LISTENING</button>
+<button onclick="startListening()">🎤 START LISTENING</button>
 <button onclick="stopListening()">STOP</button>
 
-<div id="result">Hello Sir! I am JARVIS.</div>
+<input id="commandInput"
+placeholder="Type your command here...">
 
-<br>
+<button onclick="sendCommand()">SEND COMMAND</button>
 
-<input id="textInput" placeholder="Type your command...">
-<button onclick="sendText()">SEND</button>
+<p class="small">
+JARVIS AI • Voice Engine 2.0
+</p>
+
+</div>
 
 <script>
-
-const statusText = document.getElementById("status");
-const result = document.getElementById("result");
+const statusBox = document.getElementById("status");
+const resultBox = document.getElementById("result");
+const inputBox = document.getElementById("commandInput");
 
 let recognition = null;
+let listening = false;
 
 function speak(message) {
-  result.textContent = message;
+  resultBox.textContent = message;
 
   if (!("speechSynthesis" in window)) {
-    statusText.textContent = "Voice output not supported";
+    statusBox.textContent = "SPEAKER NOT SUPPORTED";
     return;
   }
 
   window.speechSynthesis.cancel();
 
-  const speech = new SpeechSynthesisUtterance(message);
-  speech.lang = "hi-IN";
-  speech.rate = 0.9;
-  speech.pitch = 0.85;
-  speech.volume = 1;
+  const voice = new SpeechSynthesisUtterance(message);
+  voice.lang = "hi-IN";
+  voice.rate = 0.9;
+  voice.pitch = 0.85;
+  voice.volume = 1;
 
-  window.speechSynthesis.speak(speech);
+  voice.onstart = () => {
+    statusBox.textContent = "JARVIS SPEAKING...";
+  };
+
+  voice.onend = () => {
+    statusBox.textContent = "SYSTEM READY";
+  };
+
+  voice.onerror = () => {
+    statusBox.textContent = "SPEAKER ERROR";
+  };
+
+  window.speechSynthesis.speak(voice);
+}
+
+function testVoice() {
+  speak("Yes Sir! JARVIS voice system is working.");
 }
 
 async function testMic() {
+  if (!navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia) {
+    statusBox.textContent = "MICROPHONE NOT AVAILABLE";
+    return;
+  }
+
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true
-    });
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
 
     stream.getTracks().forEach(track => track.stop());
-    statusText.textContent = "Microphone Working!";
+
+    statusBox.textContent = "MICROPHONE WORKING";
+    resultBox.textContent =
+      "Sir, microphone permission granted.";
   } catch (error) {
-    statusText.textContent = "Microphone Error: " + error.name;
+    statusBox.textContent =
+      "MICROPHONE ERROR: " + error.name;
   }
 }
 
-function setupRecognition() {
+function createRecognition() {
   const Speech =
     window.SpeechRecognition ||
     window.webkitSpeechRecognition;
 
   if (!Speech) {
-    statusText.textContent =
-      "Voice recognition not supported. Try Chrome.";
+    statusBox.textContent =
+      "VOICE RECOGNITION NOT SUPPORTED";
     return false;
   }
 
@@ -142,23 +229,30 @@ function setupRecognition() {
   recognition.continuous = false;
   recognition.interimResults = false;
 
-  recognition.onstart = function() {
-    statusText.textContent = "Listening...";
+  recognition.onstart = () => {
+    listening = true;
+    statusBox.textContent = "LISTENING...";
   };
 
-  recognition.onresult = function(event) {
-    const command = event.results[0][0].transcript;
-    result.textContent = "You said: " + command;
+  recognition.onresult = event => {
+    const command =
+      event.results[0][0].transcript;
+
+    resultBox.textContent = "YOU: " + command;
     processCommand(command);
   };
 
-  recognition.onerror = function(event) {
-    statusText.textContent = "Voice Error: " + event.error;
+  recognition.onerror = event => {
+    listening = false;
+    statusBox.textContent =
+      "VOICE ERROR: " + event.error;
   };
 
-  recognition.onend = function() {
-    if (statusText.textContent === "Listening...") {
-      statusText.textContent = "System Ready";
+  recognition.onend = () => {
+    listening = false;
+
+    if (statusBox.textContent === "LISTENING...") {
+      statusBox.textContent = "SYSTEM READY";
     }
   };
 
@@ -167,81 +261,98 @@ function setupRecognition() {
 
 function startListening() {
   if (!recognition) {
-    if (!setupRecognition()) return;
+    if (!createRecognition()) return;
   }
+
+  if (listening) return;
 
   try {
     recognition.start();
   } catch (error) {
-    statusText.textContent = "Please wait and try again.";
+    statusBox.textContent = "PLEASE TRY AGAIN";
   }
 }
 
 function stopListening() {
-  if (recognition) {
+  if (recognition && listening) {
     recognition.stop();
   }
 
   window.speechSynthesis.cancel();
-  statusText.textContent = "JARVIS Stopped";
+  listening = false;
+  statusBox.textContent = "JARVIS STOPPED";
 }
 
 function processCommand(command) {
-  const text = command.toLowerCase();
+  const text = command.toLowerCase().trim();
 
-  if (text.includes("hello") ||
-      text.includes("हेलो") ||
-      text.includes("नमस्ते") ||
-      text.includes("jarvis")) {
-
+  if (
+    text.includes("hello") ||
+    text.includes("हेलो") ||
+    text.includes("नमस्ते") ||
+    text.includes("jarvis")
+  ) {
     speak("Yes Sir! How can I help you?");
+  }
 
-  } else if (text.includes("समय") ||
-             text.includes("time")) {
-
+  else if (
+    text.includes("समय") ||
+    text.includes("time")
+  ) {
     const time = new Date().toLocaleTimeString("hi-IN");
     speak("Sir, abhi samay hai " + time);
+  }
 
-  } else if (text.includes("नाम") ||
-             text.includes("name")) {
-
+  else if (
+    text.includes("नाम") ||
+    text.includes("name")
+  ) {
     speak("Sir, I am JARVIS, your personal AI assistant.");
+  }
 
-  } else if (text.includes("कैसे हो") ||
-             text.includes("how are you")) {
-
+  else if (
+    text.includes("कैसे हो") ||
+    text.includes("how are you")
+  ) {
     speak("I am functioning perfectly, Sir.");
+  }
 
-  } else if (text.includes("धन्यवाद") ||
-             text.includes("thank you")) {
-
+  else if (
+    text.includes("धन्यवाद") ||
+    text.includes("thank you")
+  ) {
     speak("You are welcome, Sir.");
+  }
 
-  } else {
+  else if (
+    text.includes("बंद") ||
+    text.includes("stop")
+  ) {
+    speak("Okay Sir.");
+  }
 
-    speak("I heard you, Sir. I am still learning this command.");
-
+  else {
+    speak("I heard you, Sir. I do not know this command yet.");
   }
 }
 
-function sendText() {
-  const input = document.getElementById("textInput");
-  const command = input.value.trim();
+function sendCommand() {
+  const command = inputBox.value.trim();
 
-  if (command !== "") {
-    processCommand(command);
-    input.value = "";
-  }
+  if (!command) return;
+
+  resultBox.textContent = "YOU: " + command;
+  inputBox.value = "";
+  processCommand(command);
 }
 
-document.getElementById("textInput")
-.addEventListener("keydown", function(event) {
+inputBox.addEventListener("keydown", event => {
   if (event.key === "Enter") {
-    sendText();
+    sendCommand();
   }
 });
-
 </script>
+
 </body>
 </html>
 
