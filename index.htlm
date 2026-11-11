@@ -1,116 +1,247 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JARVIS AI</title>
+<title>JARVIS AI Assistant</title>
+
 <style>
 body {
   margin: 0;
-  background: #07111f;
-  color: #e7f6ff;
+  padding: 25px 15px;
+  background: #050b18;
+  color: #00d9ff;
   font-family: Arial, sans-serif;
   text-align: center;
-  padding: 35px 15px;
 }
-h1 { color: #00d9ff; letter-spacing: 4px; }
-.panel {
-  max-width: 450px;
-  margin: 25px auto;
-  padding: 22px;
-  border: 1px solid #00bde8;
-  border-radius: 16px;
-  background: #0c1d30;
+
+h1 {
+  font-size: 38px;
+  letter-spacing: 5px;
+  margin-top: 35px;
+  text-shadow: 0 0 20px #00d9ff;
 }
+
+.circle {
+  width: 160px;
+  height: 160px;
+  border: 3px solid #00d9ff;
+  border-radius: 50%;
+  margin: 35px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  box-shadow: 0 0 30px #008cff;
+}
+
 button {
-  display: block;
-  width: 100%;
-  padding: 14px;
-  margin: 12px 0;
-  border: 0;
-  border-radius: 9px;
-  background: #00bde8;
-  color: #00121c;
-  font-size: 16px;
+  background: #00bde9;
+  border: none;
+  padding: 14px 22px;
+  margin: 8px;
+  border-radius: 25px;
+  font-size: 15px;
   font-weight: bold;
+  color: #00121b;
 }
+
 #status, #result {
+  margin: 20px auto;
+  max-width: 450px;
+  padding: 12px;
+  color: white;
+  line-height: 1.6;
   overflow-wrap: anywhere;
-  line-height: 1.5;
+}
+
+input {
+  padding: 13px;
+  width: 70%;
+  border-radius: 20px;
+  border: 1px solid #00d9ff;
+  background: #101c30;
+  color: white;
 }
 </style>
 </head>
+
 <body>
 
 <h1>J.A.R.V.I.S</h1>
-<p>Personal AI Assistant</p>
+<p>PERSONAL AI ASSISTANT</p>
 
-<div class="panel">
-  <h2>Microphone Test</h2>
-  <p id="status">Microphone not tested yet.</p>
-  <button onclick="testMic()">Test Microphone</button>
-  <h2>Voice Recognition</h2>
-  <p id="result">Your voice text will appear here.</p>
-  <button onclick="startVoice()">Start Listening</button>
-</div>
+<div class="circle">◉</div>
+
+<h3 id="status">System Ready</h3>
+
+<button onclick="testMic()">TEST MICROPHONE</button>
+<button onclick="startListening()">START LISTENING</button>
+<button onclick="stopListening()">STOP</button>
+
+<div id="result">Hello Sir! I am JARVIS.</div>
+
+<br>
+
+<input id="textInput" placeholder="Type your command...">
+<button onclick="sendText()">SEND</button>
 
 <script>
-async function testMic() {
-  const status = document.getElementById("status");
-  status.textContent = "Requesting microphone permission...";
 
+const statusText = document.getElementById("status");
+const result = document.getElementById("result");
+
+let recognition = null;
+
+function speak(message) {
+  result.textContent = message;
+
+  if (!("speechSynthesis" in window)) {
+    statusText.textContent = "Voice output not supported";
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const speech = new SpeechSynthesisUtterance(message);
+  speech.lang = "hi-IN";
+  speech.rate = 0.9;
+  speech.pitch = 0.85;
+  speech.volume = 1;
+
+  window.speechSynthesis.speak(speech);
+}
+
+async function testMic() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true
     });
-    status.textContent = "Microphone permission granted!";
+
     stream.getTracks().forEach(track => track.stop());
+    statusText.textContent = "Microphone Working!";
   } catch (error) {
-    status.textContent = "Microphone error: " + error.name;
+    statusText.textContent = "Microphone Error: " + error.name;
   }
 }
 
-function startVoice() {
-  const result = document.getElementById("result");
-  const Speech = window.SpeechRecognition ||
-                 window.webkitSpeechRecognition;
+function setupRecognition() {
+  const Speech =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
   if (!Speech) {
-    result.textContent =
-      "Voice recognition is not supported in this browser.";
-    return;
+    statusText.textContent =
+      "Voice recognition not supported. Try Chrome.";
+    return false;
   }
 
-  const recognition = new Speech();
+  recognition = new Speech();
   recognition.lang = "hi-IN";
-  recognition.interimResults = true;
+  recognition.continuous = false;
+  recognition.interimResults = false;
 
-  result.textContent = "Listening... Speak now.";
+  recognition.onstart = function() {
+    statusText.textContent = "Listening...";
+  };
 
-  recognition.onresult = (event) => {
-    let text = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      text += event.results[i][0].transcript;
+  recognition.onresult = function(event) {
+    const command = event.results[0][0].transcript;
+    result.textContent = "You said: " + command;
+    processCommand(command);
+  };
+
+  recognition.onerror = function(event) {
+    statusText.textContent = "Voice Error: " + event.error;
+  };
+
+  recognition.onend = function() {
+    if (statusText.textContent === "Listening...") {
+      statusText.textContent = "System Ready";
     }
-    result.textContent = text;
   };
 
-  recognition.onerror = (event) => {
-    result.textContent = "Voice error: " + event.error;
-  };
+  return true;
+}
 
-  recognition.onend = () => {
-    result.textContent += " (Listening stopped)";
-  };
+function startListening() {
+  if (!recognition) {
+    if (!setupRecognition()) return;
+  }
 
   try {
     recognition.start();
   } catch (error) {
-    result.textContent = "Could not start: " + error.message;
+    statusText.textContent = "Please wait and try again.";
   }
 }
-</script>
 
+function stopListening() {
+  if (recognition) {
+    recognition.stop();
+  }
+
+  window.speechSynthesis.cancel();
+  statusText.textContent = "JARVIS Stopped";
+}
+
+function processCommand(command) {
+  const text = command.toLowerCase();
+
+  if (text.includes("hello") ||
+      text.includes("हेलो") ||
+      text.includes("नमस्ते") ||
+      text.includes("jarvis")) {
+
+    speak("Yes Sir! How can I help you?");
+
+  } else if (text.includes("समय") ||
+             text.includes("time")) {
+
+    const time = new Date().toLocaleTimeString("hi-IN");
+    speak("Sir, abhi samay hai " + time);
+
+  } else if (text.includes("नाम") ||
+             text.includes("name")) {
+
+    speak("Sir, I am JARVIS, your personal AI assistant.");
+
+  } else if (text.includes("कैसे हो") ||
+             text.includes("how are you")) {
+
+    speak("I am functioning perfectly, Sir.");
+
+  } else if (text.includes("धन्यवाद") ||
+             text.includes("thank you")) {
+
+    speak("You are welcome, Sir.");
+
+  } else {
+
+    speak("I heard you, Sir. I am still learning this command.");
+
+  }
+}
+
+function sendText() {
+  const input = document.getElementById("textInput");
+  const command = input.value.trim();
+
+  if (command !== "") {
+    processCommand(command);
+    input.value = "";
+  }
+}
+
+document.getElementById("textInput")
+.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    sendText();
+  }
+});
+
+</script>
 </body>
 </html>
+
