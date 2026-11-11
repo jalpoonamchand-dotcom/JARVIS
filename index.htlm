@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS AI</title>
+
+<style>
+body {
+  background: #050b18;
+  color: #00d9ff;
+  font-family: Arial;
+  text-align: center;
+  padding: 25px 12px;
+}
+
+h1 {
+  font-size: 38px;
+  letter-spacing: 7px;
+  text-shadow: 0 0 20px #00d9ff;
+}
+
+.circle {
+  width: 180px;
+  height: 180px;
+  border: 3px solid #00d9ff;
+  border-radius: 50%;
+  margin: 35px auto;
+  display: grid;
+  place-items: center;
+  font-size: 65px;
+  box-shadow: 0 0 35px #008cff;
+}
+
+button {
+  background: #00c8ff;
+  color: #00121b;
+  border: none;
+  padding: 15px 24px;
+  margin: 8px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+#status, #answer {
+  color: white;
+  margin: 25px auto;
+  max-width: 400px;
+  line-height: 1.6;
+}
+</style>
+</head>
+
+<body>
+
+<h1>J.A.R.V.I.S</h1>
+<p>PERSONAL AI ASSISTANT</p>
+
+<div class="circle">◉</div>
+
+<h3 id="status">SYSTEM READY</h3>
+
+<button onclick="startJarvis()">🎤 ACTIVATE JARVIS</button>
+<button onclick="stopJarvis()">STOP</button>
+
+<div id="answer">Welcome Sir! I am ready.</div>
+
+<script>
+
+const statusBox = document.getElementById("status");
+const answerBox = document.getElementById("answer");
+
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+let recognition;
+let active = false;
+
+function speak(message) {
+
+  window.speechSynthesis.cancel();
+
+  let voice = new SpeechSynthesisUtterance(message);
+
+  voice.lang = "hi-IN";
+  voice.rate = 0.9;
+  voice.pitch = 0.85;
+
+  window.speechSynthesis.speak(voice);
+
+  answerBox.innerText = message;
+}
+
+if (SpeechRecognition) {
+
+  recognition = new SpeechRecognition();
+
+  recognition.lang = "hi-IN";
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    statusBox.innerText = "LISTENING...";
+  };
+
+  recognition.onresult = (event) => {
+
+    let command =
+    event.results[event.results.length - 1][0].transcript;
+
+    answerBox.innerText = "You said: " + command;
+
+    processCommand(command);
+  };
+
+  recognition.onerror = (event) => {
+
+    statusBox.innerText = "ERROR: " + event.error;
+
+    if (event.error === "not-allowed" ||
+        event.error === "service-not-allowed") {
+      active = false;
+    }
+  };
+
+  recognition.onend = () => {
+
+    if (active) {
+      statusBox.innerText = "RECONNECTING...";
+
+      setTimeout(() => {
+        if (active) {
+          try {
+            recognition.start();
+          } catch(e) {}
+        }
+      }, 1000);
+
+    } else {
+      statusBox.innerText = "SYSTEM READY";
+    }
+  };
+
+} else {
+
+  statusBox.innerText =
+  "Speech Recognition not supported. Try Chrome.";
+
+}
+
+function startJarvis() {
+
+  if (!recognition) {
+    speak("Sir, please use Google Chrome.");
+    return;
+  }
+
+  if (active) return;
+
+  active = true;
+
+  try {
+    recognition.start();
+  } catch(e) {
+    statusBox.innerText = "Please try again.";
+  }
+}
+
+function stopJarvis() {
+
+  active = false;
+
+  if (recognition) {
+    recognition.stop();
+  }
+
+  window.speechSynthesis.cancel();
+
+  statusBox.innerText = "SYSTEM STOPPED";
+}
+
+function processCommand(command) {
+
+  let text = command.toLowerCase();
+
+  if (text.includes("hello") ||
+      text.includes("jarvis") ||
+      text.includes("हेलो")) {
+
+    speak("Yes Sir! How can I help you?");
+
+  }
+
+  else if (text.includes("your name") ||
+           text.includes("तुम्हारा नाम")) {
+
+    speak("Sir, I am JARVIS, your personal assistant.");
+
+  }
+
+  else if (text.includes("how are you") ||
+           text.includes("कैसे हो")) {
+
+    speak("I am functioning perfectly, Sir.");
+
+  }
+
+  else if (text.includes("time") ||
+           text.includes("समय")) {
+
+    speak("Sir, please check your phone clock.");
+
+  }
+
+  else {
+
+    speak("Sorry Sir, I am still learning.");
+
+  }
+}
+
+</script>
+</body>
+</html>
